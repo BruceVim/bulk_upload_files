@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="./css/pic.css" rel="stylesheet" type="text/css" />
+    <link href="./css/pic_sec.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="./js/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/jquery.dragsort.js"></script>
+    <script type="text/javascript" src="./js/uploadDocDrop.js"></script>
+    <style>
+        ul li {
+            list-style-type:none;
+        }
+    </style>
+</head>
+<body>
+<div class="photo_obj_class_sec" style="width: 1370px">
+    <div class="photo_content_sec">
+        <div class="photo_right_sec" style="width: 1330px">
+            <ul class="photo_local_list_sec" id="photo_local_list_sec">
+                <li class="" style="">
+                    <div class="photo_add_sec chageColor_sec dropDiv_sec" data-id="0"
+                         onclick="photo_upload_multi(this)">
+                        <span>+</span>
+                    </div>
+                    <span id="tier_img_span_0" class="tier_img_span"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    photo_upload_multi = function(obj) {
+
+        //获取元素信息
+        var data_id = $(obj).attr('data-id');
+        var obj_parent = $(obj).parent().parent();
+        var obj_parent_id = obj_parent.attr('id');  //当前对象父级
+
+        var fileObjTmp = {};
+
+        //本地上传
+        var PhotoShowObj = new PhotoShowObjFunction();
+        PhotoShowObj.initDocArray();
+        PhotoShowObj.privateObj.imgUploadUrl = "/ajax/ajax_image_upload.php";
+        PhotoShowObj.privateObj.ImgType = ["jpeg", "jpg"];
+        PhotoShowObj.privateObj.DefaultType = 0; //  1 => base64上传  0 普通上传
+        PhotoShowObj.privateObj.OtherTip = '批量上传图片，默认向下逐步插入图片';
+        PhotoShowObj.DocArrayLength = 1;  //每次点击，初始化数组长度
+        // PhotoShowObj.List_Max = all_num;  //图片上传总数限制
+
+        //可兼容图库
+
+        // PhotoShowObj.showToggle = true;  //开启图库选择
+        // //图库地址
+        // PhotoShowObj.privateObj.imgManageUrl = "http://picxin.mobile21cn.com/my_pic_list_all.php?sku=" + product_sku_main + "&pic_dir=" + pic_dir;   //图库地址
+        // PhotoShowObj.privateObj.imgManageParam.pic_dir = pic_dir;
+        // PhotoShowObj.privateObj.imgManageParam.sku = product_sku_main;
+        // PhotoShowObj.showType = showType;  //默认视图
+        // PhotoShowObj.DocArray = [];
+
+
+        console.log(PhotoShowObj);
+
+        PhotoShowObj.beforeSendCallback = function ( action ) {
+
+            $('#photoUploadAction').html('提交中…');
+            $('#photoUploadAction').attr('disabled',true);
+            $('#photoUploadAction').css('background','#666');
+
+            fileObjTmp = PhotoShowObj.DocArray;
+
+            var current_parent = $(obj).parent();
+            $.each(fileObjTmp,function (k,v) {
+                current_parent.find('.tier_img_span').text('图片上传中...');
+                current_parent = current_parent.next();
+            });
+        };
+        PhotoShowObj.afterSendCallback = function ( action ) {
+
+            $('#photoUploadAction').html('确认提交');
+            $('#photoUploadAction').attr('disabled',false);
+        };
+        //图库选择回调  和    上传图片回调函数
+        PhotoShowObj.selectCallback = PhotoShowObj.singleUploadCallback = function(responseStr){
+
+            //图库模式
+            if ( PhotoShowObj.showType == 2 )
+            {
+                if ( responseStr.length == 0 )
+                {
+                    PhotoShowObj.midDivInit();
+                    alert( '获取失败' );
+                    return;
+                }
+            }
+
+            //本地上传
+            if ( PhotoShowObj.showType == 1 && 0 == responseStr['ack'] )
+            {
+                var date_type = 'data-id';
+                _data_id = parseInt(data_id)+parseInt(responseStr['_index']);
+
+                var _obj_tmp = $('#' + obj_parent_id).children('li').children('div['+ date_type +'='+ _data_id +']');
+
+                _obj_tmp.next('.tier_img_span').text( responseStr['msg'] );
+                PhotoShowObj.privateObj.showDiv.hide(200);
+                return;
+            }
+
+            var _fileObj = [];
+            if ( PhotoShowObj.showType == 1 )
+            {
+                _fileObj.push(responseStr)
+            }
+            var fileObj = PhotoShowObj.showType == 1 ? _fileObj : responseStr;
+
+            if ( fileObj.length > 0 )
+            {
+                $.each(fileObj,function (k,v) {
+
+                    var img_tmp_url = v['img_url'];
+
+                    var fileObjUrl =  img_tmp_url;
+
+                    img_tmp_url = img_tmp_url.replace(/\+/ig, '%2B');
+                    img_tmp_url = img_tmp_url.replace(/\ /ig, '%20');
+
+                    var _data_id = 1;
+                    if ( PhotoShowObj.showType == 1 )
+                    {
+                        _data_id = parseInt(data_id)+parseInt(responseStr['_index']);
+                    } else {
+                        _data_id = parseInt(data_id)+parseInt(k);
+                    }
+
+                    // 规格图
+                    date_type = 'data-id';
+                    var _name = ('single' == kd_type) ? 'tier_img['+ _id +']' : 'tier_img['+ pl_index +'][]';
+                    var liTmp = $(
+                        '<div title="' + (fileName || shopee_obj.ranId()) + '" fileName="'
+                        + (fileName || shopee_obj.ranId()) + '" style="background-image:url(\'' + img_tmp_url + '\');border: 1px dashed rgb(204, 204, 204);">' +
+                        '</div>' +
+                        '<div class="progress_obj" id="b_' + fileName + '"><input type="hidden" name="'+ _name +'" value="'+ fileObjUrl +'"></div>' +
+                        '<a class="photo_content_sec_close" data-id="'+ _id +'" onclick="photo_content_sec_close(this)">×</a>'
+                    );
+
+
+
+                    var tier_name = '';
+                    console.log(obj_parent_id)
+                    console.log(date_type)
+                    console.log(_data_id)
+                    var _obj_tmp = $('#' + obj_parent_id).children('li').children('div['+ date_type +'='+ _data_id +']');
+
+                    _obj_tmp.parent().prepend(liTmp);
+                    _obj_tmp.next('.tier_img_span').text( tier_name );
+                    _obj_tmp.remove();
+
+                })
+            }
+
+            PhotoShowObj.privateObj.showDiv.hide(200);
+            return;
+
+
+        }
+        //PhotoShowObj.showToggle = false;
+        PhotoShowObj.show();
+    };
+
+    photo_content_sec_close = function (obj) {
+        var id = $(obj).attr('data-id');
+
+        var liTmp = '';
+
+        liTmp = '<div class="photo_add_sec chageColor_sec dropDiv_sec" data-id="'+ id +'" onclick="photo_upload_multi(this)">' +
+            '<span>+</span>' +
+            '</div>';
+        
+        $(obj).siblings().each(function (k,v) {
+            if( !$(v).hasClass('tier_img_span')  )
+            {
+                $(v).remove();
+            }
+        })
+        $(obj).parent().prepend(liTmp);
+        $(obj).remove();
+    }
+</script>
+</html>
